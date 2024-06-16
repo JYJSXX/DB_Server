@@ -16,12 +16,14 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Map;
+import java.lang.Object;
 
 public class Main {
     static db_helper dbh = new db_helper();
     public static void main(String[] args) {
         int port = 8080; // 监听的端口号
-        dbh.db_helper();
+        dbh.init();
         try {
             // 创建 HttpServer 实例并绑定到指定端口
             HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -45,47 +47,181 @@ public class Main {
         @Override
         public void handle(@NotNull HttpExchange exchange) throws IOException {
             // 设置响应头和状态码
-            String response = "Hello, World!";
+            String response;
             InputStream is = exchange.getRequestBody();
             String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             ObjectMapper mapper = new ObjectMapper();
+            System.out.println(requestBody);
             JsonNode jsonNode = mapper.readTree(requestBody);
             String type = jsonNode.get("type").asText();
-            switch (type){
-                case "login":
-                    //向数据库发起查询
-                    break;
-                case "checkAuthentication":
-                    //向数据库发起实名查询
-                    int AccountID = jsonNode.get("AccountID").asInt();
-                    var authentication = dbh.checkAuthenticated(AccountID);
-                    response = authentication.toString();
-                    break;
-                case "register":
-                    String AccountName = jsonNode.get("AccountName").asText();
-                    String password = jsonNode.get("password").asText();
-                    String AccountType = jsonNode.get("AccountType").asText();
-                    int BankID = jsonNode.get("BankID").asInt();
-                    try {
-                        dbh.Register(AccountName, password, AccountType, BankID);
-                    } catch (DatabaseException e) {
-                        response = e.getMessage();
-                    }
-                    break;
-                case "Authenticate":
-                    //向数据库发起实名认证
-                    AccountID = jsonNode.get("CustomerID").asInt();
-                    var CustomerID = jsonNode.get("CustomerID").asText();
-                    var CustomerName = jsonNode.get("CustomerName").asText();
-                    try{
-                        dbh.Authenticate(AccountID, CustomerID, CustomerName);
-                    } catch (DatabaseException e) {
-                        response = e.getMessage();
-                    }
-                    break;
-            }
+            boolean success_access = true;
+            Map<String,Object> response_map = new HashMap<>();
             System.out.println("get message");
-            System.out.println(requestBody);
+            try {
+                switch (type){
+                    case "login":
+                        //向数据库发起查询
+                    {
+                        String AccountName = jsonNode.get("AccountName").asText();
+                        String password = jsonNode.get("password").asText();
+                        response_map = dbh.Login(AccountName, password);
+                        if(response_map.get("isCustomer").equals(true))
+                        {
+                            var res = dbh.checkAuthenticated((int) ((Object[]) response_map.get("AccountID"))[0]);
+                            response_map.putAll(res);
+                        }
+                        break;
+                    }
+                    case "checkAuthentication":
+                        //向数据库发起实名查询
+                    {
+                        int AccountID = jsonNode.get("AccountID").asInt();
+                        response_map = dbh.checkAuthenticated(AccountID);
+                        break;
+                    }
+                    case "register": {
+                        var AccountName = jsonNode.get("AccountName").asText();
+                        var password = jsonNode.get("password").asText();
+                        String AccountType = jsonNode.get("AccountType").asText();
+                        int BankID = jsonNode.get("BankID").asInt();
+                        dbh.Register(AccountName, password, AccountType, BankID);
+                        break;
+                    }
+                    case "getUserDetail":{
+                        var AccountID = jsonNode.get("AccountID").asInt();
+                        var isCustomer = jsonNode.get("isCustomer").asBoolean();
+                        response_map = dbh.getUserDetail(AccountID, isCustomer);
+                        break;
+                    }
+                    case "Authenticate":
+                        //向数据库发起实名认证
+                    {
+                        var AccountID = jsonNode.get("AccountID").asInt();
+                        var CustomerID = jsonNode.get("CustomerID").asText();
+                        var CustomerName = jsonNode.get("CustomerName").asText();
+                        dbh.Authenticate(AccountID, CustomerName, CustomerID);
+                        break;
+                    }
+                    case "getBankList": {
+                        response_map = dbh.getBankList();
+                        break;
+                    }
+                    case "getDepartmentList": {
+                        if(jsonNode.has("BankID")){
+                            var BankID = jsonNode.get("BankID").asInt();
+                            response_map = dbh.getDepartmentList(BankID);
+                        }
+                        else{
+                            response_map = dbh.getDepartmentList();
+                        }
+                        break;
+                    }
+                    case "getLoanList": {
+                        var AccountID = jsonNode.get("AccountID").asInt();
+                        var isCustomer = jsonNode.get("isCustomer").asBoolean();
+                        response_map = dbh.getLoanList(AccountID,isCustomer);
+                        break;
+                    }
+                    case "getEDB":{
+                        var ID = jsonNode.get("DepartmentID").asInt();
+                        response_map = dbh.getEDB(ID);
+                        break;
+                    }
+                    case "getInterestRate":{
+                        var ID = jsonNode.get("AccountID").asInt();
+                        var Amount = jsonNode.get("Amount").asInt();
+                        var res = dbh.getInterestRate(ID, Amount);
+                        response_map.put("InterestRate", res);
+                        break;
+                    }
+                    case "applyLoan":{
+                        var ID = jsonNode.get("AccountID").asInt();
+                        var Amount = jsonNode.get("Amount").asInt();
+                        var Duration = jsonNode.get("Duration").asInt();
+                        dbh.applyLoan(ID, Amount, Duration);
+                        break;
+                    }
+                    case "repayLoan":{
+                        var ID = jsonNode.get("LoanID").asInt();
+                        dbh.repayLoan(ID);
+                        break;
+                    }
+                    case "cancelLoan":{
+                        var ID = jsonNode.get("LoanID").asInt();
+                        dbh.cancelLoan(ID);
+                        break;
+                    }
+                    case "confirmLoan":{
+                        var LoanID = jsonNode.get("LoanID").asInt();
+                        var EmployeeID = jsonNode.get("EmployeeID").asInt();
+                        dbh.confirmLoan(LoanID, EmployeeID);
+                        break;
+                    }
+                    case "denyLoan":{
+                        var LoanID = jsonNode.get("LoanID").asInt();
+                        var EmployeeID = jsonNode.get("EmployeeID").asInt();
+                        dbh.denyLoan(LoanID, EmployeeID);
+                        break;
+                    }
+                    case "modifyMail":{
+                        var isCustomer = jsonNode.get("isCustomer").asBoolean();
+                        var ID = jsonNode.get("ID").asInt();
+                        var Mail = jsonNode.get("Mail").asText();
+                        dbh.modifyMail(isCustomer, ID, Mail);
+                        break;
+                    }
+                    case "modifyTel":{
+                        var isCustomer = jsonNode.get("isCustomer").asBoolean();
+                        var ID = jsonNode.get("ID").asInt();
+                        var Tel = jsonNode.get("Tel").asText();
+                        dbh.modifyTel(isCustomer, ID, Tel);
+                        break;
+                    }
+                    case "registerEmployee":{
+                        var EmployeeName = jsonNode.get("EmployeeName").asText();
+                        var password = jsonNode.get("password").asText();
+                        var DepartmentID = jsonNode.get("DepartmentID").asInt();
+                        var Salary = jsonNode.get("Salary").asDouble();
+                        dbh.Register(EmployeeName, password, DepartmentID, Salary);
+                        break;
+                    }
+                    case "uploadAvatar":{
+                        var isCustomer = jsonNode.get("isCustomer").asBoolean();
+                        var ID = jsonNode.get("ID").asInt();
+                        var Avatar = jsonNode.get("Avatar").asText();
+                        dbh.uploadAvatar(isCustomer, ID, Avatar);
+                        break;
+                    }
+                    case "getEmployeeList":{
+                        response_map = dbh.getEmployeeList();
+                        break;
+                    }
+                    case "getEmployeeName":{
+                        var ID = jsonNode.get("ID").asInt();
+                        response_map = dbh.getEmployeeName(ID);
+                        break;
+                    }
+                    case "getBankListDetail":{
+                        response_map = dbh.getBankListDetail();
+                        break;
+                    }
+                    default:
+                        response_map.put("msg", "Invalid request type");
+                        success_access = false;
+                        break;
+                }
+            } catch (DatabaseException e) {
+                e.printStackTrace();
+                success_access = false;
+                response_map.put("msg", e.getMessage());
+            } catch (Exception e){
+                success_access = false;
+                response_map.put("msg", e.getMessage());
+                System.out.println(e.getMessage());
+            }
+            response_map.put("success", success_access);
+
+            response = mapper.writeValueAsString(response_map);
             exchange.sendResponseHeaders(200, response.getBytes().length);
 
             // 获取输出流并写入响应内容
