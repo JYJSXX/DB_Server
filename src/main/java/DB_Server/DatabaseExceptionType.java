@@ -13,5 +13,6 @@ public enum DatabaseExceptionType{
     BALANCE_NOT_ENOUGH(),
     LOAN_NOT_FOUND(),
     LOAN_NOT_VALID(),
+    TOO_MUCH_MONEY(),
     UNKNOWN_ERROR()
 }

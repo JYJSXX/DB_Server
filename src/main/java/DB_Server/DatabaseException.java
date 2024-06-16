@@ -43,6 +43,9 @@ public class DatabaseException extends RuntimeException{
             case LOAN_NOT_VALID:
                 this.msg = "Loan not valid: " + msg;
                 break;
+            case TOO_MUCH_MONEY:
+                this.msg = "You've saved too much money: " + msg;
+                break;
             default:
                 this.msg = "Unknown error" + msg ;
         }

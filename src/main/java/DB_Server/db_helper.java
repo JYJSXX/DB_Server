@@ -442,4 +442,40 @@ public class db_helper {
         return db.simpleQuery(Map.of("table", "Bank", "columns", new String[]{"*"}));
     }
 
+    public double saveMoney(int id, int amount) {
+        var res = db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                "conditions", new String[]{"AccountID = " + id}));
+        if(res.get("count").equals(0)) throw new DatabaseException(DatabaseExceptionType.ACCOUNT_NOT_FOUND, id + "");
+        var balance = (double) ((Object[]) res.get("Balance"))[0];
+        db.UpdateTable(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                "values", new String[]{(balance + amount) + ""}, "conditions", new String[]{"AccountID = " + id}));
+        res = db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                "conditions", new String[]{"AccountID = " + id}));
+        if(balance + amount != (double) ((Object[]) res.get("Balance"))[0]){
+            db.UpdateTable(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                    "values", new String[]{(balance) + ""}, "conditions", new String[]{"AccountID = " + id}));
+            throw new DatabaseException(DatabaseExceptionType.TOO_MUCH_MONEY, id + "");
+        }
+        return balance + amount;
+    }
+
+    public double withdrawMoney(int id, int amount) {
+        var res = db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                "conditions", new String[]{"AccountID = " + id}));
+        if(res.get("count").equals(0)) throw new DatabaseException(DatabaseExceptionType.ACCOUNT_NOT_FOUND, id + "");
+        var balance = (double) ((Object[]) res.get("Balance"))[0];
+        if(balance < amount) {
+            throw new DatabaseException(DatabaseExceptionType.BALANCE_NOT_ENOUGH, "Balance: " + balance );
+        }
+        db.UpdateTable(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                "values", new String[]{(balance - amount) + ""}, "conditions", new String[]{"AccountID = " + id}));
+        res = db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                "conditions", new String[]{"AccountID = " + id}));
+        if(balance - amount != (double) ((Object[]) res.get("Balance"))[0]) {
+            db.UpdateTable(Map.of("table", "Account", "columns", new String[]{"Balance"},
+                    "values", new String[]{(balance) + ""}, "conditions", new String[]{"AccountID = " + id}));
+            throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, id + "");
+        }
+        return balance - amount;
+    }
 }

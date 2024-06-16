@@ -205,6 +205,20 @@ public class Main {
                         response_map = dbh.getBankListDetail();
                         break;
                     }
+                    case "saveMoney":{
+                        var ID = jsonNode.get("AccountID").asInt();
+                        var Amount = jsonNode.get("Amount").asInt();
+                        double balance = dbh.saveMoney(ID, Amount);
+                        response_map.put("balance", balance);
+                        break;
+                    }
+                    case "withdrawMoney":{
+                        var ID = jsonNode.get("AccountID").asInt();
+                        var Amount = jsonNode.get("Amount").asInt();
+                        double balance = dbh.withdrawMoney(ID, Amount);
+                        response_map.put("balance", balance);
+                        break;
+                    }
                     default:
                         response_map.put("msg", "Invalid request type");
                         success_access = false;
