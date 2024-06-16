@@ -441,4 +441,5 @@ public class db_helper {
     public Map<String, Object> getBankListDetail() {
         return db.simpleQuery(Map.of("table", "Bank", "columns", new String[]{"*"}));
     }
+
 }

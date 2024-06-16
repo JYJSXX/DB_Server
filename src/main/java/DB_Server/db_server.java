@@ -233,7 +233,7 @@ public class db_server {
             statement.executeUpdate(
                     "INSERT INTO Customer VALUES (1, 'testCustomer', '12332111223','test@mail.test');");
             statement.executeUpdate(
-                    "INSERT INTO Account Values(1, 'test', '', 'Checking Account', 100000000, 1); ");
+                    "INSERT INTO Account Values(1, 'test', '', 'Checking Account', 10000, 1); ");
             statement.executeUpdate("INSERT INTO Password VALUES (1, 'test')");
             statement.executeUpdate("INSERT INTO Authentication VALUES(1, 1)");
 //            statement.executeUpdate(
@@ -447,9 +447,9 @@ END
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
-            if(e.getErrorCode() == 45002)
+            if(e.getSQLState().equals("45002"))
                 throw new DatabaseException(DatabaseExceptionType.BALANCE_NOT_ENOUGH, e.getMessage() + " IN RepayLoan");
-            else if (e.getErrorCode() == 45001) {
+            else if (e.getSQLState().equals("45001")) {
                 throw new DatabaseException(DatabaseExceptionType.LOAN_NOT_VALID, e.getMessage() + " IN RepayLoan");
             } else
                 throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, e.getMessage() + " IN RepayLoan");
@@ -463,9 +463,9 @@ END
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
-            if(e.getErrorCode() == 45001)
+            if(e.getSQLState().equals("45001"))
                 throw new DatabaseException(DatabaseExceptionType.LOAN_NOT_VALID, e.getMessage() + " IN CancelLoan");
-            else if(e.getErrorCode() == 45000)
+            else if(e.getSQLState().equals("45000"))
                 throw new DatabaseException(DatabaseExceptionType.LOAN_NOT_FOUND, e.getMessage() + " IN CancelLoan");
             else
                 throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, e.getMessage() + " IN CancelLoan");
@@ -479,9 +479,9 @@ END
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
-            if(e.getErrorCode() == 45001)
+            if(e.getSQLState().equals("45001"))
                 throw new DatabaseException(DatabaseExceptionType.LOAN_NOT_VALID, e.getMessage() + " IN ConfirmLoan");
-            else if(e.getErrorCode() == 45000)
+            else if(e.getSQLState().equals("45000"))
                 throw new DatabaseException(DatabaseExceptionType.LOAN_NOT_FOUND, e.getMessage() + " IN ConfirmLoan");
             else
                 throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, e.getMessage() + " IN ConfirmLoan");
@@ -495,9 +495,9 @@ END
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
-            if(e.getErrorCode() == 45001)
+            if(e.getSQLState().equals("45001"))
                 throw new DatabaseException(DatabaseExceptionType.LOAN_NOT_VALID, e.getMessage() + " IN DenyLoan");
-            else if(e.getErrorCode() == 45000)
+            else if(e.getSQLState().equals("45000"))
                 throw new DatabaseException(DatabaseExceptionType.LOAN_NOT_FOUND, e.getMessage() + " IN DenyLoan");
             else
                 throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, e.getMessage() + " IN DenyLoan");
