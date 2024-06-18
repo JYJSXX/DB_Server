@@ -244,6 +244,11 @@ public class Main {
                         response_map.put("AccountName", AccountName);
                         break;
                     }
+                    case "delEmployee":{
+                        var ID = jsonNode.get("EmployeeID").asInt();
+                        dbh.delEmployee(ID);
+                        break;
+                    }
                     default:
                         response_map.put("msg", "Invalid request type");
                         success_access = false;

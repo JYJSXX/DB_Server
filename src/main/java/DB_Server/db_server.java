@@ -1,5 +1,6 @@
 package DB_Server;
 
+import java.io.Serializable;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -702,6 +703,17 @@ END
             e.printStackTrace();
             throw new DatabaseException(DatabaseExceptionType.UPDATE_LOAN_DATE_ILLEGALLY, e.getMessage()
                     + " IN SetLoanDate");
+        }
+    }
+
+    public void DeleteTable(Map<String, Serializable> table) {
+        try {
+            Statement statement = connection.createStatement();
+            var sql = "DELETE FROM " + table.get("table") + " WHERE " + ((String[]) table.get("conditions"))[0];
+            statement.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, e.getMessage() + " IN DeleteTable");
         }
     }
 }

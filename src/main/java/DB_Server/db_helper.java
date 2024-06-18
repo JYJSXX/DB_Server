@@ -452,7 +452,17 @@ public class db_helper {
     }
 
     public Map<String, Object> getEmployeeList(){
-        return db.simpleQuery(Map.of("table", "Employee", "columns", new String[]{"*"}));
+        var res = db.simpleQuery(Map.of("table", "Employee", "columns", new String[]{"*"}));
+        int count = (int) res.get("count");
+        var IDS = (Object []) (res.get("EmployeeID"));
+        for(int i = 0; i < count; i++){
+            int EmployeeID = (int) IDS[i];
+            var res1 = db.simpleQuery(Map.of("table", "ePassword", "columns", new String[]{"password"},
+                    "conditions", new String[]{"EmployeeID = " + EmployeeID}));
+            if(res1.get("count").equals(0)) IDS[i] = 1;
+        }
+        res.put("EmployeeID", IDS);
+        return res;
     }
 
     public Map<String, Object> getEmployeeName(int EmployeeID){
@@ -507,5 +517,9 @@ public class db_helper {
     public void modifyDepartment(int id, String departmentName) {
         db.UpdateTable(Map.of("table","Department", "columns", new String[]{"DepartmentName"},
                 "values", new String[]{surround(departmentName)}, "conditions", new String[]{"DepartmentID = " + id}));
+    }
+
+    public void delEmployee(int id) {
+        db.DeleteTable(Map.of("table", "EPassword", "conditions", new String[]{"EmployeeID = " + id}));
     }
 }
