@@ -1,6 +1,7 @@
 package DB_Server;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -224,7 +225,7 @@ public class db_helper {
      * @param AccountID the ID of the user
      * @return the account name of the user
      */
-    private String getAccountName(int AccountID){
+    public String getAccountName(int AccountID){
         var res = db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"AccountName"},
                 "conditions", new String[]{"AccountID = " + AccountID}));
         if(res.get("count").equals(0)) throw new DatabaseException(DatabaseExceptionType.ACCOUNT_NOT_FOUND, AccountID + " !!in private!!");
@@ -252,22 +253,41 @@ public class db_helper {
      * @param isCustomer true if the user is a customer
      * @return a map contains the list of the loan of the Customer or all the loan if the user is an employee
      */
-    public Map<String, Object> getLoanList(int AccountID, boolean isCustomer){
+    public Map<String, Object> getLoanList(int AccountID, boolean isCustomer, Map<String, Object> con){
         Map<String, Object> res = null;
+        ArrayList<String> condition = new ArrayList<>();
+        if(con.containsKey("amount")) condition.add("Amount = " + con.get("amount"));
+        if(con.containsKey("status")) condition.add("Status = " + con.get("status"));
         if (isCustomer) {
             var AccountName = getAccountName(AccountID);
             if(checkAuthenticated(AccountID).get("isAuthenticated").equals(false))
                 throw new DatabaseException(DatabaseExceptionType.NOT_AUTHENTICATED, "AccountName: " + AccountName);
+            condition.add("AccountID = " + AccountID);
+//            System.out.println(condition.toArray()[0]);
             res = db.simpleQuery(Map.of("table", "Loan", "columns", new String[]{"*"},
-                    "conditions", new String[]{"AccountID = " + AccountID}));
+                    "conditions", condition.toArray(new String[0])));
         }
         else {
-            var EmployeeID = AccountID;
+            if(con.containsKey("name")){
+                res = db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"AccountID"},
+                        "conditions", new String[]{"AccountName = " + surround(con.get("name").toString())}));
+                if(res.get("count").equals(0)){
+//                    throw new DatabaseException(DatabaseExceptionType.ACCOUNT_NOT_FOUND, con.get("name").toString() + " in getLoanList");
+                    condition.add("AccountID = -1");
+                }
+                else {
+                    condition.add("AccountID = " + ((Object[]) res.get("AccountID"))[0]);
+                }
+            }
             var Employee_res = db.simpleQuery(Map.of("table", "Employee", "columns", new String[]{"EmployeeID"},
-                    "conditions", new String[]{"EmployeeID = " + EmployeeID}));
+                    "conditions", new String[]{"EmployeeID = " + AccountID}));
             if(Employee_res.get("count").equals(0))
-                throw new DatabaseException(DatabaseExceptionType.ACCOUNT_NOT_FOUND, EmployeeID + " in getLoanList");
-            res = db.simpleQuery(Map.of("table", "Loan", "columns", new String[]{"*"}));
+                throw new DatabaseException(DatabaseExceptionType.ACCOUNT_NOT_FOUND, AccountID + " in getLoanList");
+            if(condition.size() == 0){
+                res = db.simpleQuery(Map.of("table", "Loan", "columns", new String[]{"*"}));
+            }
+            else res = db.simpleQuery(Map.of("table", "Loan", "columns", new String[]{"*"},
+                    "conditions", condition.toArray(new String[0])));
         }
         return res;
     }
@@ -333,7 +353,7 @@ public class db_helper {
      * @param amount the amount of the loan
      * @param AccountID the ID of the user
      */
-    public void applyLoan(int AccountID, double amount, int Duration){
+    public void applyLoan(int AccountID, double amount, long Duration){
         if(amount <= 0) throw new DatabaseException(DatabaseExceptionType.INVALID_LOAN_AMOUNT, amount + "");
         var accQ = db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"AccountID"},
                 "conditions", new String[]{"AccountID = " + AccountID}));
@@ -343,8 +363,13 @@ public class db_helper {
         if(bankID == -1) throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, AccountID + "");
         double interestRate = getInterestRate(AccountID, amount);
         int LoanID = db.InsertTable("Loan", new String[]{"AccountID", "Amount", "InterestRate, BankID"},
-                new String[]{AccountID + "", amount + "", interestRate + "", bankID + ""},Duration);
-        db.SetLoanDate(LoanID, new Date());
+                new String[]{AccountID + "", amount + "", interestRate + "", bankID + ""},1);
+        //一个月之后
+        var now = new Date();
+        // Duration个月后
+        var Due_date = now.getTime() + Duration * 30 * 24 * 60 * 60 * 1000;
+        java.sql.Date DUE = new java.sql.Date(Due_date);
+        db.SetLoanDate(LoanID, DUE);
     }
 
     /**
@@ -477,5 +502,10 @@ public class db_helper {
             throw new DatabaseException(DatabaseExceptionType.UNKNOWN_ERROR, id + "");
         }
         return balance - amount;
+    }
+
+    public void modifyDepartment(int id, String departmentName) {
+        db.UpdateTable(Map.of("table","Department", "columns", new String[]{"DepartmentName"},
+                "values", new String[]{surround(departmentName)}, "conditions", new String[]{"DepartmentID = " + id}));
     }
 }

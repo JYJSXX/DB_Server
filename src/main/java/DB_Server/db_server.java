@@ -688,15 +688,14 @@ END
         }
     }
 
-    public void SetLoanDate(int LoanID, java.util.Date Due){
+    public void SetLoanDate(int LoanID, java.sql.Date Due){
         java.sql.Date LoanDate = new java.sql.Date(new java.util.Date().getTime());
         //一年之后
-        java.sql.Date RequestDate = new java.sql.Date(LoanDate.getTime() + 1000L * 60 * 60 * 24 * 365);
         String sql = "UPDATE Loan SET LoanDate = ?, RequestDate = ? WHERE LoanID = " + LoanID;
         try {
             var preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setDate(1, LoanDate);
-            preparedStatement.setDate(2, RequestDate);
+            preparedStatement.setDate(2, Due);
             preparedStatement.execute();
         }
         catch (SQLException e) {

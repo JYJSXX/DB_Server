@@ -119,7 +119,20 @@ public class Main {
                     case "getLoanList": {
                         var AccountID = jsonNode.get("AccountID").asInt();
                         var isCustomer = jsonNode.get("isCustomer").asBoolean();
-                        response_map = dbh.getLoanList(AccountID,isCustomer);
+                        var name = jsonNode.get("name");
+                        var amount = jsonNode.get("amount");
+                        var status = jsonNode.get("status");
+                        Map<String, Object> con = new HashMap<>();
+                        if(name != null){
+                            con.put("name", name.asText());
+                        }
+                        if(amount != null){
+                            con.put("amount", amount.asInt());
+                        }
+                        if(status != null){
+                            con.put("status", status.asInt());
+                        }
+                        response_map = dbh.getLoanList(AccountID,isCustomer, con);
                         break;
                     }
                     case "getEDB":{
@@ -217,6 +230,18 @@ public class Main {
                         var Amount = jsonNode.get("Amount").asInt();
                         double balance = dbh.withdrawMoney(ID, Amount);
                         response_map.put("balance", balance);
+                        break;
+                    }
+                    case "modifyDepartment":{
+                        var ID = jsonNode.get("DepartmentID").asInt();
+                        var DepartmentName = jsonNode.get("DepartmentName").asText();
+                        dbh.modifyDepartment(ID, DepartmentName);
+                        break;
+                    }
+                    case "getAccountName":{
+                        var ID = jsonNode.get("AccountID").asInt();
+                        var AccountName = dbh.getAccountName(ID);
+                        response_map.put("AccountName", AccountName);
                         break;
                     }
                     default:
