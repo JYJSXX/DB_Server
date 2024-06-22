@@ -522,4 +522,8 @@ public class db_helper {
     public void delEmployee(int id) {
         db.DeleteTable(Map.of("table", "EPassword", "conditions", new String[]{"EmployeeID = " + id}));
     }
+
+    public Map<String, Object> getCustomerList() {
+        return db.simpleQuery(Map.of("table", "Account", "columns", new String[]{"*"}));
+    }
 }

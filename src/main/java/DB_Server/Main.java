@@ -59,7 +59,7 @@ public class Main {
             System.out.println("get message");
             try {
                 switch (type){
-                    case "login":
+                        case "login":
                         //向数据库发起查询
                     {
                         String AccountName = jsonNode.get("AccountName").asText();
@@ -247,6 +247,10 @@ public class Main {
                     case "delEmployee":{
                         var ID = jsonNode.get("EmployeeID").asInt();
                         dbh.delEmployee(ID);
+                        break;
+                    }
+                    case "getCustomerList":{
+                        response_map = dbh.getCustomerList();
                         break;
                     }
                     default:
